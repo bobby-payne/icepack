@@ -2,7 +2,7 @@
 ### Author: Robert Payne
 ### Contact: gpayne1654@uvic.ca
 ###
-### This package makes extensive use of array indexing techniques, and the libraries numpy, pandas, and xarray. 
+### This package makes extensive use of array indexing techniques, and the libraries numpy, pandas, xarray, and matplotlib. 
 ### It's recommended you familiarize yourself with these before working with this library.
 ### ---------------------------------------------
 
@@ -234,14 +234,13 @@ def get_trend (dataset):
 
 
 
-def remove_trend (dataset, var, method='linear', ref_period=(0,9999)):
+def remove_trend (dataset, var, method='mean', ref_period=(0,9999)):
     """
     Function that removes linear trends using Mitchell Bushuk's method.
     In short, the trend that's removed from the ith data point in the time series is calculated using only the first i data points (i, i-1, ..., 2, 1).
     For i = 1,2,3, the mean is removed instead.
     This is done separately for every month (i.e., the trend calculated for a november data point only uses other data pts in november for its calculation).
-    Currently this function is only compatible with a 1-dimensional time series. (i.e., the only coordinate is time.)
-    It works, but is a bit messy and could do with a rewrite.
+    This function is only compatible with a 1-dimensional time series. (i.e., the only coordinate is time.) (unless method='mean', in which case it should always work.)
 
     Args:
         dataset (xarray dataset):   the dataset containing a time coordinate and the variable to be detrended.
@@ -283,7 +282,7 @@ def remove_trend (dataset, var, method='linear', ref_period=(0,9999)):
 
         # Just remove the mean
         elif method == 'mean':
-            subset_detrended[var] = subset[var] - subset[var].mean()
+            subset_detrended[var] = subset[var] - subset[var].mean(dim='time')
             dataset[var].loc[month_indices] = subset_detrended[var]
 
         # "Standard" detrending method
