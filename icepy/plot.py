@@ -44,7 +44,8 @@ def plot_fields (var_data, var_names, cbarlabel="Sea Ice Concentration", clevels
     Plots two fields around the Antarctic, one as a colormesh and another as contours (e.g., for sic and psl).
 
     Args:
-        var_data (list):        var_data should be a list of TWO xarray datasets (e.g., [dataset1, dataset2]). The first dataset will become the colormesh, and the second
+        var_data (list):        var_data must be a list of TWO 2D arrays. Each 2D array contains the data sets to be plotted.
+                                The first dataset will become the colormesh, and the second
                                 will become the contours. Each dataset MUST consist of a single gridded variable as a function of longitude and latitude coordinates,
                                 but NO time coordinate (i.e., choose a specific time before using this function).
         var_names (list):       the names of the variables to be plotted, as in the xarray datasets (e.g., ['sic', 'psl']).
@@ -106,6 +107,7 @@ def plot_fields (var_data, var_names, cbarlabel="Sea Ice Concentration", clevels
             plt.clabel(var2_plot, inline=True, fontsize=3)
 
     plt.show()
+    plt.tight_layout()
 
     if return_axes:
         return ax

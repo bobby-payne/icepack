@@ -138,9 +138,11 @@ def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None
             SIC = SIC.where((SIC[lon_label] >= lon_lo) & (SIC[lon_label] <= lon_up)) # AND
 
     # calculate SIE
+    if SIC[sic_label].units == '%' or SIC[sic_label].units == 'percent':
+        SIC[sic_label] *= 1e-2
     SIE = grid_area.expand_dims(time=SIC['time']).where(SIC[sic_label] >= 0.15).sum(dim=(lat_label,lon_label))
     SIE *= mfactor
-    # if method == 'old':  *****DONT USE THIS, WILL BE REMOVED AT SOME POINT, IT'S LESS ACCURATE AND MORE COMPUTATIONALLY EXPENSIVE
+    # if method == 'old':  *****DONT USE THIS, WILL BE REMOVED AT SOME POINT, IT'S LESS ACCURATE AND SLOWER
     #     SIE = grid_area.expand_dims(time=SIC['time']).where(SIC[sic_label] >= 0.15)
     #     SIE *= (111120**2)*np.abs(np.cos(SIE.lat*np.pi/180))
     #     SIE = SIE.sum(dim=(lat_label,lon_label))
