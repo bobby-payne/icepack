@@ -90,7 +90,7 @@ def format_time_coord (dataset, date_start, date_end, freq):
 
 
 
-def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', flip_meridional=False, flip_zonal=False, ensemble=None, mfactor=1e-12, as_dataframe=False):
+def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', flip_meridional=False, flip_zonal=False, ensemble=None, sic_factor=1, mfactor=1e-12, as_dataframe=False):
     """
     Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice extent (in units of 10^6 km^2) 
     at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
@@ -107,6 +107,7 @@ def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None
         flip_meridional (bool):     if True, then sic INSIDE the LATITUDE bounds are set to nans, rather than outside. Defaults to False.
         flip_zonal (bool):          if True, then sic INSIDE the LONGITUDE bounds are set to nans, rather than outside. Defaults to False.
         ensemble (None, str, int):  selects the given ensemble and drops the rest. if 'ave' or 'mean', then averages over ensembles instead.
+        sic_factor (float):         multiplies all sic values by this factor. useful for converting from percents. default 1.
         mfactor (float):            multiplicative factor to multiple the final result by. Use 1e-12 if you want the outputted SIE to be in units of 10^6 sq km. If 1, then output is in units of sq m.
         as_dataframe (bool):        if 'get' and this are true, then this function will return the SIE dataset as a pandas dataframe rather than an xarray dataset. Defaults to False.
 
@@ -138,9 +139,8 @@ def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None
             SIC = SIC.where((SIC[lon_label] >= lon_lo) & (SIC[lon_label] <= lon_up)) # AND
 
     # calculate SIE
-    if SIC[sic_label].units == '%' or SIC[sic_label].units == 'percent':
-        SIC[sic_label] *= 1e-2
-    SIE = grid_area.expand_dims(time=SIC['time']).where(SIC[sic_label] >= 0.15).sum(dim=(lat_label,lon_label))
+    SIC[sic_label] *= sic_factor
+    SIE = grid_area.expand_dims(time=SIC['time']).where((SIC[sic_label] >= 0.15) & (SIC[sic_label] <= 1.0)).sum(dim=(lat_label,lon_label))
     SIE *= mfactor
     # if method == 'old':  *****DONT USE THIS, WILL BE REMOVED AT SOME POINT, IT'S LESS ACCURATE AND SLOWER
     #     SIE = grid_area.expand_dims(time=SIC['time']).where(SIC[sic_label] >= 0.15)
