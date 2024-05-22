@@ -227,28 +227,27 @@ def get_trend (dataset):
         dataset (xarray dataset): the dataset containing a time coordinate and the variable to be detrended.
 
     Returns:
-        (1D list): the trend line values.
+        (1D list): the slope and the intercept of the fit.
     """
 
     N = len(dataset['time'])
     slope, intercept = np.polyfit(np.arange(0,N,1), dataset, deg=1)
-    return slope*np.arange(0,N,1) + intercept
+    return [slope,intercept]
 
 
 
 def remove_trend (dataset, var, method='mean', ref_period=(0,9999)):
     """
-    Function that removes linear trends using Mitchell Bushuk's method.
-    In short, the trend that's removed from the ith data point in the time series is calculated using only the first i data points (i, i-1, ..., 2, 1).
-    For i = 1,2,3, the mean is removed instead.
-    This is done separately for every month (i.e., the trend calculated for a november data point only uses other data pts in november for its calculation).
+    Function that removes linear or mean trends, for each month separately. (I.e. the November trend is calculated only using November data points.)
     This function is only compatible with a 1-dimensional time series. (i.e., the only coordinate is time.) (unless method='mean', in which case it should always work.)
 
     Args:
         dataset (xarray dataset):   the dataset containing a time coordinate and the variable to be detrended.
         var (string):               the label of the variable to calculate anomalies (e.g., "SIE")
-        method (string):            if 'Mitch', then use Mitch's detrending method. If 'Mean', then remove mean. If 'linear', just a standard linear detrending.
-        ref_period (tuple):          use if you want the trend to be calculated only using data from a range of years, e.g., between the years 2000 and 2020.
+        method (string):            If 'Mean', then remove mean. If 'linear', just a standard linear detrending.
+        ref_period (tuple):         use if you want the trend to be calculated only using data from a range of years, e.g., between the years 2000 and 2020.
+                                    Note that the trend is removed from the entire dataset, regardless of the reference period used for its calculation, UNLESS
+                                    you use the 'Mitch' method, in which case only data in the reference period are detrended.
 
     Returns:
         (dataset, same dims as input): dataset with the trend removed.
@@ -258,42 +257,28 @@ def remove_trend (dataset, var, method='mean', ref_period=(0,9999)):
 
     for m in np.arange(1,13,1): # loop over each month
 
-        # get subset of data for that month
-        month_indices = (dataset['time.month'] == m) & (dataset['time.year'] >= ref_period[0]) & (dataset['time.year'] <= ref_period[1])
-        subset = dataset.where(month_indices,drop=True)
-        subset_detrended = subset.copy(deep=True) # deep must be set to True
+        # get subset of data for month 'm'
+        month_indices = (dataset['time.month'] == m)
+        subset_month = dataset.where(month_indices,drop=True)
+        subset_detrended = subset_month.copy(deep=True) # the dataset to be (but not yet) detrended then returned. 'deep' must be true.
 
-        # Mitch's detrending method
-        if method == 'Mitch' or method == 'mitch': 
-
-            for i in range(len(subset[var])): # loop over each point for that month and apply the detrending procedure
-
-                # for i = 0,1,2, remove the mean
-                if i <= 2:
-                    
-                    mean_for_month = subset[var][:i+1].mean()
-                    subset_detrended[var][i] -= mean_for_month
-
-                # for i > 2, remove the corresponding linear trend
-                else:
-
-                    trend_for_month = get_trend(subset[var][:i+1])
-                    subset_detrended[var][i] -= trend_for_month[i]
-
-            dataset[var].loc[month_indices] = subset_detrended[var]
+        # another subset, this time narrowed down to the years over which the trend is to be computed.
+        year_indices = (subset_month['time.year'] >= ref_period[0]) & (subset_month['time.year'] <= ref_period[1])
+        subset_monthandyear = subset_month.where(year_indices, drop=True)
 
         # Just remove the mean
-        elif method == 'mean':
-            subset_detrended[var] = subset[var] - subset[var].mean(dim='time')
+        if method == 'mean':
+            subset_detrended[var] = subset_month[var] - subset_monthandyear[var].mean(dim='time')
             dataset[var].loc[month_indices] = subset_detrended[var]
 
-        # "Standard" detrending method
-        elif method == 'linear' or method == 'lin':
-            subset_detrended[var] = subset[var] - get_trend(subset[var])
+        # "Standard" linear detrending method
+        elif method == 'linear' or method == 'lin' or method == 'l':
+            slope, intercept = get_trend(subset_monthandyear[var])
+            subset_detrended[var] = subset_month[var] - (intercept + slope * np.arange(len(subset_month)))
             dataset[var].loc[month_indices] = subset_detrended[var]
 
         else:
-            raise ValueError("Not a valid detrending method. Choose one of ['mean', 'linear', 'Mitch']")
+            raise ValueError("Not a valid detrending method. Choose one of ['mean', 'linear']")
 
     return dataset
 
