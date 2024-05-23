@@ -1,0 +1,3 @@
+IcePy is a small package I developed for my research on sea ice at the University of Victoria, BC, Canada. Its functionality is makes heavy use of `numpy` and `xarray`.
+
+Note that the folder `old_code` is for code I wrote for my undergraduate thesis. It is bulky, slow, and not very well documented -- I heavily advise against its use. The directory will be removed in the future, though for now it serves as an occassional reference and refresher on what I had done previously.
