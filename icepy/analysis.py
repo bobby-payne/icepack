@@ -150,12 +150,10 @@ def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None
     SIE = SIE.rename({'cell_area': 'SIE'})
 
     # average/select ensembles if specified
-    if not ensemble == None:
-        if ensemble == 'average' or ensemble == 'ave' or ensemble == 'mean':
-            SIE = SIE.groupby('ensemble', squeeze=False).mean()
-        else:
-            SIE = SIE.where(SIE['ensemble'] == ensemble, drop=True)
-        SIE = SIE.squeeze(dim="ensemble")   # removes ensemble as a dimension
+    if ensemble == 'average' or ensemble == 'ave' or ensemble == 'mean':
+        SIE = SIE.mean(dim="ensemble")
+    elif type(ensemble)==int:
+        SIE = SIE.where(SIE['ensemble'] == ensemble, drop=True).squeeze(dim="ensemble")
 
     # match time coordinate format with that of input and then return the dataset
     SIE['time'] = SIC['time']
