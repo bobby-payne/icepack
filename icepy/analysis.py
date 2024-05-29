@@ -155,7 +155,7 @@ def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None
             SIE = SIE.groupby('ensemble', squeeze=False).mean()
         else:
             SIE = SIE.where(SIE['ensemble'] == ensemble, drop=True)
-        SIE['SIE'] = SIE['SIE'][list(SIE.dims)[::-1].index('ensemble')]  # removes ensemble as a dimension (xr.drop_dims obliterates SIE, for some reason)
+        SIE = SIE.squeeze(dim="ensemble")   # removes ensemble as a dimension
 
     # match time coordinate format with that of input and then return the dataset
     SIE['time'] = SIC['time']
