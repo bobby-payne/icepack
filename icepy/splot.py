@@ -68,8 +68,8 @@ def add_sic(ax, data, anom=True, month=None, year=None, transform=ccrs.PlateCarr
     cmap.set_bad(color='lightgrey', alpha=1)  # Specify the color for NaN values
 
     # plot
-    sic_plot = data[sicname].plot(ax=ax,transform=transform,cmap=cmap,vmin=vmin,vmax=vmax,cbar_kwargs={"label":cbarlabel,"ticks":np.arange(-1,1.2,.2)})
-
+    sic_plot = data[sicname].plot(ax=ax,transform=transform,cmap=cmap,add_colorbar=False)
+    return sic_plot
 
 
 def add_ice_edge(ax, data, month=None, year=None, clevel=0.15, ccol='black', cls='--', clw=0.5, transform=ccrs.PlateCarree()):
@@ -99,7 +99,7 @@ def add_ice_edge(ax, data, month=None, year=None, clevel=0.15, ccol='black', cls
     
     # plot
     ice_edge_plot = data[sicname].plot.contour(ax=ax,transform=transform,colors='black',levels=[clevel],linewidths=clw,linestyles=cls)
-
+    return ice_edge_plot
 
 
 def add_psl(ax, data, month=None, year=None, clevels=np.arange(950, 1200, 5), ccol='cyan', clw=0.5, transform=ccrs.PlateCarree()):
@@ -123,3 +123,4 @@ def add_psl(ax, data, month=None, year=None, clevels=np.arange(950, 1200, 5), cc
     # plot
     psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels= clevels,linewidths=clw)
     plt.clabel(psl_plot, inline=True, fontsize=4, colors='black')
+    return psl_plot
