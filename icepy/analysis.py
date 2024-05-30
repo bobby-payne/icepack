@@ -151,7 +151,7 @@ def sic_to_sie (sic_dataset, grid_area_dataset, lat_bounds=None, lon_bounds=None
 
     # average/select ensembles if specified
     if ensemble == 'average' or ensemble == 'ave' or ensemble == 'mean':
-        SIE = SIE.mean(dim="ensemble")
+        SIE = SIE.mean(dim='ensemble')
     elif type(ensemble)==int:
         SIE = SIE.where(SIE['ensemble'] == ensemble, drop=True).squeeze(dim="ensemble")
 
@@ -174,7 +174,7 @@ def get_climatology (dataset, var, ref_period=None):
         ref_period (tuple):         a tuple of two years defining the timespan (inclusive) over which the climatology will be calculated. If 'None', then entire time span is used.
 
     Returns:
-        (1x13 array):   The climatology. The first entry is the mean over all months, whereas the remaining twelve correspond to the mean for each specific month, starting in January.
+        (xarray dataset):           The climatology dataset.
     """
 
     # include only the data within the reference period range
@@ -183,12 +183,8 @@ def get_climatology (dataset, var, ref_period=None):
         dataset = dataset.where((dataset['time.year'] >= start_year) & (dataset['time.year'] <= end_year))
 
     # calculate the climatology for each month
-    for i in range(13):
-        if i == 0:
-            mean_over_all_months = [dataset.mean(dim='time')[var].values]
-        else:
-            means_for_each_month = dataset.groupby('time.month').mean(dim='time')[var].values
-    climatology = np.concatenate((mean_over_all_months, means_for_each_month))
+    climatology = dataset.groupby('time.month').mean(dim='time')
+    climatology['overall_mean'] = dataset.mean(dim='time')[var]
 
     return climatology
 
