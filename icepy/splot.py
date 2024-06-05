@@ -122,5 +122,5 @@ def add_psl(ax, data, month=None, year=None, clevels=np.arange(950, 1200, 5), cc
 
     # plot
     psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels= clevels,linewidths=clw)
-    plt.clabel(psl_plot, inline=True, fontsize=4, colors='black')
+    plt.clabel(psl_plot, inline=True, fontsize=4, colors='black', use_clabeltext=True)
     return psl_plot
