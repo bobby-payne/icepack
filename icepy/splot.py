@@ -49,8 +49,10 @@ def add_sic(ax, data, anom=True, month=None, year=None, transform=ccrs.PlateCarr
     # Note to self: figure out what this code block does and why it's needed
     if 'siconc' in list(data.variables):
         sicname = 'siconc'
-    else:
+    elif 'SICN' in list(data.variables):
         sicname = 'SICN'
+    else:
+        sicname = 'sicn'
     try:
         data[sicname] = data[sicname][list(data[sicname].dims).index('time')] 
     except:
@@ -90,8 +92,10 @@ def add_ice_edge(ax, data, month=None, year=None, clevel=0.15, ccol='black', cls
     # Note to self: figure out what this code block does and why it's needed
     if 'siconc' in list(data.variables):
         sicname = 'siconc'
-    else:
+    elif 'SICN' in list(data.variables):
         sicname = 'SICN'
+    else:
+        sicname = 'sicn'
     try:
         data[sicname] = data[sicname][list(data[sicname].dims).index('time')] 
     except:
