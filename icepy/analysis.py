@@ -2,7 +2,7 @@
 ### Author: Robert Payne
 ### Contact: gpayne1654@uvic.ca
 ###
-### This package makes extensive use of array indexing techniques, and the libraries numpy, pandas, xarray, and matplotlib. 
+### This package makes extensive use of array indexing techniques, and the libraries numpy, xarray, and matplotlib. 
 ### It's recommended you familiarize yourself with these before working with this library.
 ### ---------------------------------------------
 
@@ -11,59 +11,42 @@ import xarray as xr
 import pandas as pd
 import cftime
 
-def _cftime_to_datetime64(xr_data):
-    """
-    Convert 'time' coordinate of an xarray Dataset or DataArray from cftime objects to datetime64[ns] objects.
-    Not callable external to the module.
-    
-    Args:
-        xr_data (xarray.Dataset or xarray.DataArray): The xarray Dataset or DataArray containing a 'time' coordinate.
-        
-    Returns:
-        the input dataset, with the 'time' coordinate as datetime64[ns] object
-    """
-    # Extract the 'time' coordinate from the xarray object
-    time_coord = xr_data['time']
-    
-    # Check if 'time' coordinate is already in pandas datetime format
-    if isinstance(time_coord.values[0], pd.Timestamp):
-        return time_coord
-    
-    # Check if 'time' coordinate is in cftime format
-    elif isinstance(time_coord.values[0], cftime.datetime):
-        # Convert cftime dates to pandas datetimes
-        pd_datetimes = []
-        for date in time_coord.values:
-            if isinstance(date, cftime.datetime):
-                pd_datetimes.append(pd.Timestamp(date.year, date.month, date.day, date.hour, date.minute, date.second, date.microsecond))
-            else:
-                raise TypeError("Unsupported time coordinate format. Supported formats are pandas datetimes and cftime datetimes.")
-        xr_data['time'] = pd.DatetimeIndex(pd_datetimes)
-        return xr_data
-    
-    else:
-        raise TypeError("Unsupported time coordinate format. Supported formats are pandas datetimes and cftime datetimes.")
 
 
-
-def for_month (dataset, month, drop=True):
+def select_date(dataset,year=None,month=None,day=None,drop=True):
     """
-    Function that takes in a dataset with a time coordinate and returns a dataset with only the data for the specified month.
+    Selects the data of a particular xarray dataset for a particular year, month, and day.
 
     Args:
         dataset:                the dataset with the time coordinate
-        month (int or list):    the month (or list of months) for which you want the data
-        drop (bool):            whether to drop the data that aren't for the given month. If False, then these data are set to nans instead. Default True.
+        year (int or None):     the year for which you want the data
+        month (int or None):    the month for which you want the data
+        day (int or None):      the day for which you want the data
+        drop (bool):            whether or not to drop the data outside the given date. Default True.
 
     Returns:
-        dataset with the data for the corresponding month(s).
+        dataset with the data for the given year, month, and/or day.
     """
 
-    if type(month) == int:
-        return dataset.where(dataset['time.month'] == month, drop=drop)
-    else:
-        return dataset.where(dataset['time.month'].isin(month), drop=drop)
+    data = dataset
+    if not year == None:
+        try:
+            data = data.where(data['time.year']==year,drop=drop)
+        except:
+            data = data.where(data['year']==year,drop=drop)
+    if not month == None:
+        try:
+            data = data.where(data['time.month']==month,drop=drop)
+        except:
+            data = data.where(data['month']==month,drop=drop)
+    if not day == None:
+        try:
+            data = data.where(data['time.day']==day,drop=drop)
+        except:
+            data = data.where(data['day']==day,drop=drop)
 
+    return data
+    
 
 
 def format_time_coord (dataset, date_start, date_end, freq):
