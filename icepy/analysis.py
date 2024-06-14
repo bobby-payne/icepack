@@ -82,7 +82,7 @@ def format_time_coord (dataset, date_start, date_end, freq):
 
     date_start = np.datetime64(date_start)
     date_end = np.datetime64(date_end)
-    date_range = np.arange(date_start, date_end + np.timedelta64(1,freq), np.timedelta64(1,freq))
+    date_range = np.arange(date_start, date_end + np.timedelta64(1,freq), np.timedelta64(1,freq)).astype('datetime64[ns]')
     if not len(dataset['time']) == len(date_range):
         raise ValueError("Specified range of time is incompatible with the number of data points and the given frequency.")
     dataset['time'] = date_range
