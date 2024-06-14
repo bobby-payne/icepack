@@ -100,7 +100,7 @@ def add_ice_edge(ax, data, month=None, year=None, clevel=0.15, ccol='black', cls
         data[sicname] = data[sicname][list(data[sicname].dims).index('month')]
     
     # plot
-    ice_edge_plot = data[sicname].plot.contour(ax=ax,transform=transform,colors='black',levels=[clevel],linewidths=clw,linestyles=cls)
+    ice_edge_plot = data[sicname].plot.contour(ax=ax,transform=transform,colors=ccol,levels=[clevel],linewidths=clw,linestyles=cls)
     return ice_edge_plot
 
 
