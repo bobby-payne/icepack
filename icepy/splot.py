@@ -98,6 +98,10 @@ def add_psl(ax, data, year=None, month=None, day=None, clevels=np.arange(950, 12
         data['psl'] = data['psl'][list(data.dims).index('month')]
 
     # plot
+    try:
+        data = data.assign_coords(lon=(((data.lon + 180) % 360) - 180)).sortby('lon')
+    except:
+        data = data.assign_coords(longitude=(((data.longitude + 180) % 360) - 180)).sortby('longitude')
     psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels= clevels,linewidths=clw)
     plt.clabel(psl_plot, inline=True, fontsize=4, colors='black', use_clabeltext=True)
     return psl_plot
