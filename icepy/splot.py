@@ -16,9 +16,7 @@ import pandas as pd
 import cartopy
 import cartopy.crs as ccrs
 import cartopy.feature as cf
-import netCDF4, h5netcdf, dask
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from matplotlib import cm, colors, colormaps
+from matplotlib import cm, colors
 from scipy.io import loadmat
 
 
