@@ -49,7 +49,7 @@ def select_date(dataset,year=None,month=None,day=None,drop=True):
     
 
 
-def format_time_coord (dataset, date_start, date_end, freq):
+def format_time_coord (dataset, date_start, date_end, freq, leap_years=True):
     """ 
     Function that takes a dataset with a time coordinate and changes the time coordinate format to a datetime64[ns] format.
 
@@ -58,7 +58,8 @@ def format_time_coord (dataset, date_start, date_end, freq):
         date_start:         the date of the first measurement. 'YYYY-MM-DD' for daily, 'YYYY-MM' for monthly, etc.
         date_end:           the date of the last measurement. 'YYYY-MM-DD' for daily, 'YYYY-MM' for monthly, etc.
         freq:               frequency of measurements. 'D' for daily, 'M' for monthly, 'Y' for yearly.
-
+        leap_years:         if False, then all Februaries have 28 days.      
+        
     Returns:
         dataset with the time coordinate reformatted as datetime64[ns].
     """
@@ -66,8 +67,18 @@ def format_time_coord (dataset, date_start, date_end, freq):
     date_start = np.datetime64(date_start)
     date_end = np.datetime64(date_end)
     date_range = np.arange(date_start, date_end + np.timedelta64(1,freq), np.timedelta64(1,freq)).astype('datetime64[ns]')
+    
+    # Deal with leap years, if necessary.
+    if freq == 'D':
+        # Remove ALL February 29ths from date_range
+        if leap_years == False:
+            date_range = date_range[np.array([not (date[5:10] == '02-29') for date in date_range.astype(str)])]
+        # Else, remove all February 29ths from date_range UNLESS it's a leap year.
+        else:
+            date_range = date_range[np.array([not (date[5:10] == '02-29' and int(date[0:4])%4 != 0) for date in date_range.astype(str)])]
+
     if not len(dataset['time']) == len(date_range):
-        raise ValueError("Specified range of time is incompatible with the number of data points and the given frequency.")
+        raise ValueError(f"Number of points in specified range of time (N={len(date_range)}) is incompatible with the number of data points (N={len(dataset['time'])}) and the given frequency.")
     dataset['time'] = date_range
     return dataset
 
