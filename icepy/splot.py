@@ -8,15 +8,8 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.path as mpath
-import matplotlib.ticker as mticker
-import xarray as xr
-import cftime
-import pandas as pd
-import cartopy
 import cartopy.crs as ccrs
-import cartopy.feature as cf
-from matplotlib import cm, colors
+from matplotlib import colors
 from scipy.io import loadmat
 
 
@@ -59,12 +52,8 @@ def add_sic(ax, data, anom=True, month=None, year=None, transform=ccrs.PlateCarr
     # colour map
     if anom:
         cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
-        vmin,vmax = [-1,1]
-        cbarlabel = "SIC Anomaly"
     else:
         cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3_pos.mat')['cmap'], name='jet3')
-        vmin,vmax = [0,1]
-        cbarlabel = "SIC"
     cmap.set_bad(color='lightgrey', alpha=1)  # Specify the color for NaN values
 
     # plot
