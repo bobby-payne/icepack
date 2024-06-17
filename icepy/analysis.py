@@ -2,7 +2,7 @@
 ### Author: Robert Payne
 ### Contact: gpayne1654@uvic.ca
 ###
-### This package makes extensive use of array indexing techniques, and the libraries numpy, pandas, xarray, and matplotlib. 
+### This package makes extensive use of array indexing techniques, and the libraries numpy, xarray, and matplotlib. 
 ### It's recommended you familiarize yourself with these before working with this library.
 ### ---------------------------------------------
 
@@ -11,62 +11,45 @@ import xarray as xr
 import pandas as pd
 import cftime
 
-def _cftime_to_datetime64(xr_data):
-    """
-    Convert 'time' coordinate of an xarray Dataset or DataArray from cftime objects to datetime64[ns] objects.
-    Not callable external to the module.
-    
-    Args:
-        xr_data (xarray.Dataset or xarray.DataArray): The xarray Dataset or DataArray containing a 'time' coordinate.
-        
-    Returns:
-        the input dataset, with the 'time' coordinate as datetime64[ns] object
-    """
-    # Extract the 'time' coordinate from the xarray object
-    time_coord = xr_data['time']
-    
-    # Check if 'time' coordinate is already in pandas datetime format
-    if isinstance(time_coord.values[0], pd.Timestamp):
-        return time_coord
-    
-    # Check if 'time' coordinate is in cftime format
-    elif isinstance(time_coord.values[0], cftime.datetime):
-        # Convert cftime dates to pandas datetimes
-        pd_datetimes = []
-        for date in time_coord.values:
-            if isinstance(date, cftime.datetime):
-                pd_datetimes.append(pd.Timestamp(date.year, date.month, date.day, date.hour, date.minute, date.second, date.microsecond))
-            else:
-                raise TypeError("Unsupported time coordinate format. Supported formats are pandas datetimes and cftime datetimes.")
-        xr_data['time'] = pd.DatetimeIndex(pd_datetimes)
-        return xr_data
-    
-    else:
-        raise TypeError("Unsupported time coordinate format. Supported formats are pandas datetimes and cftime datetimes.")
 
 
-
-def for_month (dataset, month, drop=True):
+def select_date(dataset,year=None,month=None,day=None,drop=True):
     """
-    Function that takes in a dataset with a time coordinate and returns a dataset with only the data for the specified month.
+    Selects the data of a particular xarray dataset for a particular year, month, and day.
 
     Args:
         dataset:                the dataset with the time coordinate
-        month (int or list):    the month (or list of months) for which you want the data
-        drop (bool):            whether to drop the data that aren't for the given month. If False, then these data are set to nans instead. Default True.
+        year (int or None):     the year for which you want the data
+        month (int or None):    the month for which you want the data
+        day (int or None):      the day for which you want the data
+        drop (bool):            whether or not to drop the data outside the given date. Default True.
 
     Returns:
-        dataset with the data for the corresponding month(s).
+        dataset with the data for the given year, month, and/or day.
     """
 
-    if type(month) == int:
-        return dataset.where(dataset['time.month'] == month, drop=drop)
-    else:
-        return dataset.where(dataset['time.month'].isin(month), drop=drop)
+    data = dataset
+    if not year == None:
+        try:
+            data = data.where(data['time.year']==year,drop=drop)
+        except:
+            data = data.where(data['year']==year,drop=drop)
+    if not month == None:
+        try:
+            data = data.where(data['time.month']==month,drop=drop)
+        except:
+            data = data.where(data['month']==month,drop=drop)
+    if not day == None:
+        try:
+            data = data.where(data['time.day']==day,drop=drop)
+        except:
+            data = data.where(data['day']==day,drop=drop)
+
+    return data
+    
 
 
-
-def format_time_coord (dataset, date_start, date_end, freq):
+def format_time_coord (dataset, date_start, date_end, freq, leap_years=True):
     """ 
     Function that takes a dataset with a time coordinate and changes the time coordinate format to a datetime64[ns] format.
 
@@ -75,16 +58,27 @@ def format_time_coord (dataset, date_start, date_end, freq):
         date_start:         the date of the first measurement. 'YYYY-MM-DD' for daily, 'YYYY-MM' for monthly, etc.
         date_end:           the date of the last measurement. 'YYYY-MM-DD' for daily, 'YYYY-MM' for monthly, etc.
         freq:               frequency of measurements. 'D' for daily, 'M' for monthly, 'Y' for yearly.
-
+        leap_years:         if False, then all Februaries have 28 days.      
+        
     Returns:
         dataset with the time coordinate reformatted as datetime64[ns].
     """
 
     date_start = np.datetime64(date_start)
     date_end = np.datetime64(date_end)
-    date_range = np.arange(date_start, date_end + np.timedelta64(1,freq), np.timedelta64(1,freq))
+    date_range = np.arange(date_start, date_end + np.timedelta64(1,freq), np.timedelta64(1,freq)).astype('datetime64[ns]')
+    
+    # Deal with leap years, if necessary.
+    if freq == 'D':
+        # Remove ALL February 29ths from date_range
+        if leap_years == False:
+            date_range = date_range[np.array([not (date[5:10] == '02-29') for date in date_range.astype(str)])]
+        # Else, remove all February 29ths from date_range UNLESS it's a leap year.
+        else:
+            date_range = date_range[np.array([not (date[5:10] == '02-29' and int(date[0:4])%4 != 0) for date in date_range.astype(str)])]
+
     if not len(dataset['time']) == len(date_range):
-        raise ValueError("Specified range of time is incompatible with the number of data points and the given frequency.")
+        raise ValueError(f"Number of points in specified range of time (N={len(date_range)}) is incompatible with the number of data points (N={len(dataset['time'])}) and the given frequency.")
     dataset['time'] = date_range
     return dataset
 
@@ -191,24 +185,31 @@ def get_climatology (dataset, var, ref_period=None):
 
 
 
-def get_anomalies (dataset, var, ref_period=None):
+def get_anomalies (dataset, var, ref_period=None, ref_dataset=None):
     """
     Function that takes in a netcdf dataset and calculates the climatology (based on a mean) for a user-specified variable and reference period.
 
     Args:
-        dataset (xarray dataset):   the dataset containing a time coordinate and the variable from which anomalies will be calculated.
+        dataset (xarray):           the dataset containing a time coordinate and the variable from which anomalies will be calculated.
         var (string):               the label of the variable to calculate anomalies (e.g., "SIE")
         ref_period (tuple):         a tuple of two years defining the timespan (inclusive) over which the climatology will be calculated. If 'None', then entire time span is used.
-
+        ref_dataset (xarray):       the dataset whose climatology will be used to calculate the anomalies. If None, then anomalies are
+                                    calculated with respect to the input dataset.
+        
     Returns:
         (dataset, same dims as input): dataset as anomalies, with respect to the climatology calculated over the reference period provided.
     """
 
+    dataset = dataset.copy(deep=True)
+
     # climatology for all months
-    climatology = get_climatology(dataset=dataset, var=var, ref_period=ref_period)[1:]
-    
+    if type(ref_dataset) == type(None):
+        climatology = get_climatology(dataset=dataset, var=var, ref_period=ref_period)[var]
+    else:
+        climatology = get_climatology(dataset=ref_dataset, var=var, ref_period=ref_period)[var]
+
     # subtract climatology from dataset to produce anomalies
-    dataset[var] = dataset[var].groupby('time.year').map(lambda x: x - climatology[x['time.month'].values[0]-1 : x['time.month'].values[-1]])
+    dataset[var] = dataset[var].groupby('time.year').map(lambda x: x - climatology.where(climatology['month'] <= len(x), drop=True).values)
     return dataset
 
 
@@ -252,7 +253,7 @@ def remove_mean (dataset, var, ref_period=(0,9999)):
 
         # get subset of data for month 'm'
         month_indices = (dataset['time.month'] == m)
-        subset_month = dataset.where(month_indices,drop=True)
+        subset_month = dataset.where(dataset['time.month'] == m,drop=True)
         subset_detrended = subset_month.copy(deep=True) # the dataset to be (but not yet) detrended then returned. 'deep' must be true.
 
         # another subset, this time narrowed down to the years over which the trend is to be computed.

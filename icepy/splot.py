@@ -2,24 +2,18 @@
 ### Author: Robert Payne
 ### Contact: gpayne1654@uvic.ca
 ###
-### This package makes extensive use of array indexing techniques, and the libraries numpy, pandas, xarray, and matplotlib. 
+### This package makes extensive use of array indexing techniques, and the libraries numpy, xarray, and matplotlib. 
 ### It's recommended you familiarize yourself with these before working with this library.
 ### ---------------------------------------------
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.path as mpath
-import matplotlib.ticker as mticker
-import xarray as xr
-import cftime
-import pandas as pd
-import cartopy
 import cartopy.crs as ccrs
-import cartopy.feature as cf
-import netCDF4, h5netcdf, dask
-from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
-from matplotlib import cm, colors, colormaps
+from matplotlib import colors
 from scipy.io import loadmat
+
+# Custom package
+from icepy.analysis import select_date
 
 
 
@@ -31,19 +25,13 @@ def set_extent(ax, domain = [-180,180,-90,-47.5], transform=ccrs.PlateCarree()):
 
 
 
-def add_sic(ax, data, anom=True, month=None, year=None, transform=ccrs.PlateCarree()):
+def add_sic(ax, data, anom=True, year=None, month=None, day=None, transform=ccrs.PlateCarree()):
     """
     Adds a sea ice concentration heatmap to the given axis.
     """
 
     # select given year and month (otherwise, assumes user already pre-selected)
-    if not year == None:
-        data = data.where(data['time.year']==year,drop=True)
-    if not month == None:
-        try:
-            data = data.where(data['time.month']==month,drop=True)
-        except:
-            data = data.where(data['month']==month,drop=True)
+    data = select_date(data,year=year,month=month,day=day,drop=True)
 
     # Get sic data from input dataset
     # Note to self: figure out what this code block does and why it's needed
@@ -61,12 +49,8 @@ def add_sic(ax, data, anom=True, month=None, year=None, transform=ccrs.PlateCarr
     # colour map
     if anom:
         cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
-        vmin,vmax = [-1,1]
-        cbarlabel = "SIC Anomaly"
     else:
         cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3_pos.mat')['cmap'], name='jet3')
-        vmin,vmax = [0,1]
-        cbarlabel = "SIC"
     cmap.set_bad(color='lightgrey', alpha=1)  # Specify the color for NaN values
 
     # plot
@@ -74,19 +58,13 @@ def add_sic(ax, data, anom=True, month=None, year=None, transform=ccrs.PlateCarr
     return sic_plot
 
 
-def add_ice_edge(ax, data, month=None, year=None, clevel=0.15, ccol='black', cls='--', clw=0.5, transform=ccrs.PlateCarree()):
+def add_ice_edge(ax, data, year=None, month=None, day=None, clevel=0.15, ccol='black', cls='--', clw=0.5, transform=ccrs.PlateCarree()):
     """
     Adds a sea ice edge contour to the given axis.
     """
 
     # select given year and month (otherwise, assumes user already pre-selected)
-    if not year == None:
-        data = data.where(data['time.year']==year,drop=True)
-    if not month == None:
-        try:
-            data = data.where(data['time.month']==month,drop=True)
-        except:
-            data = data.where(data['month']==month,drop=True)
+    data = select_date(data,year=year,month=month,day=day,drop=True)
 
     # Get sic data from input dataset
     # Note to self: figure out what this code block does and why it's needed
@@ -102,29 +80,28 @@ def add_ice_edge(ax, data, month=None, year=None, clevel=0.15, ccol='black', cls
         data[sicname] = data[sicname][list(data[sicname].dims).index('month')]
     
     # plot
-    ice_edge_plot = data[sicname].plot.contour(ax=ax,transform=transform,colors='black',levels=[clevel],linewidths=clw,linestyles=cls)
+    ice_edge_plot = data[sicname].plot.contour(ax=ax,transform=transform,colors=ccol,levels=[clevel],linewidths=clw,linestyles=cls)
     return ice_edge_plot
 
 
-def add_psl(ax, data, month=None, year=None, clevels=np.arange(950, 1200, 5), ccol='cyan', clw=0.5, transform=ccrs.PlateCarree()):
+
+def add_psl(ax, data, year=None, month=None, day=None, clevels=np.arange(950, 1200, 5), ccol='cyan', clw=0.5, transform=ccrs.PlateCarree()):
     """
     Adds sea level pressure contours to the given axis.
     """
     
     # select given year and month (otherwise, assumes user already pre-selected)
-    if not year == None:
-        data = data.where(data['time.year']==year,drop=True)
-    if not month == None:
-        try:
-            data = data.where(data['time.month']==month,drop=True)
-        except:
-            data = data.where(data['month']==month,drop=True)
+    data = select_date(data,year=year,month=month,day=day,drop=True)
     try:
         data['psl'] = data['psl'][list(data.dims).index('time')]
     except:
         data['psl'] = data['psl'][list(data.dims).index('month')]
 
     # plot
+    try:
+        data = data.assign_coords(lon=(((data.lon + 180) % 360) - 180)).sortby('lon')
+    except:
+        data = data.assign_coords(longitude=(((data.longitude + 180) % 360) - 180)).sortby('longitude')
     psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels= clevels,linewidths=clw)
     plt.clabel(psl_plot, inline=True, fontsize=4, colors='black', use_clabeltext=True)
     return psl_plot
