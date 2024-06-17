@@ -185,24 +185,31 @@ def get_climatology (dataset, var, ref_period=None):
 
 
 
-def get_anomalies (dataset, var, ref_period=None):
+def get_anomalies (dataset, var, ref_period=None, ref_dataset=None):
     """
     Function that takes in a netcdf dataset and calculates the climatology (based on a mean) for a user-specified variable and reference period.
 
     Args:
-        dataset (xarray dataset):   the dataset containing a time coordinate and the variable from which anomalies will be calculated.
+        dataset (xarray):           the dataset containing a time coordinate and the variable from which anomalies will be calculated.
         var (string):               the label of the variable to calculate anomalies (e.g., "SIE")
         ref_period (tuple):         a tuple of two years defining the timespan (inclusive) over which the climatology will be calculated. If 'None', then entire time span is used.
-
+        ref_dataset (xarray):       the dataset whose climatology will be used to calculate the anomalies. If None, then anomalies are
+                                    calculated with respect to the input dataset.
+        
     Returns:
         (dataset, same dims as input): dataset as anomalies, with respect to the climatology calculated over the reference period provided.
     """
 
+    dataset = dataset.copy(deep=True)
+
     # climatology for all months
-    climatology = get_climatology(dataset=dataset, var=var, ref_period=ref_period)[1:]
-    
+    if type(ref_dataset) == type(None):
+        climatology = get_climatology(dataset=dataset, var=var, ref_period=ref_period)[var]
+    else:
+        climatology = get_climatology(dataset=ref_dataset, var=var, ref_period=ref_period)[var]
+
     # subtract climatology from dataset to produce anomalies
-    dataset[var] = dataset[var].groupby('time.year').map(lambda x: x - climatology[x['time.month'].values[0]-1 : x['time.month'].values[-1]])
+    dataset[var] = dataset[var].groupby('time.year').map(lambda x: x - climatology.where(climatology['month'] <= len(x), drop=True).values)
     return dataset
 
 
@@ -246,7 +253,7 @@ def remove_mean (dataset, var, ref_period=(0,9999)):
 
         # get subset of data for month 'm'
         month_indices = (dataset['time.month'] == m)
-        subset_month = dataset.where(month_indices,drop=True)
+        subset_month = dataset.where(dataset['time.month'] == m,drop=True)
         subset_detrended = subset_month.copy(deep=True) # the dataset to be (but not yet) detrended then returned. 'deep' must be true.
 
         # another subset, this time narrowed down to the years over which the trend is to be computed.
