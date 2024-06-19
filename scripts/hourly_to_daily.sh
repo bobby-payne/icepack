@@ -4,7 +4,7 @@
 source_dir="./"
 
 # Destination directory for output files
-dest_dir="../1x1/"
+dest_dir="./"
 
 # Loop through each file in the source directory
 for file in "$source_dir"/*; do
@@ -13,8 +13,8 @@ for file in "$source_dir"/*; do
         # Extract the filename (without the path)
         filename=$(basename "$file")
         
-        # Apply the cdo remapbil command to the file
-        cdo remapbil,r360x180 "$file" "$dest_dir/$filename"
+        # Apply the cdo daymean command to the file, removing the hourly part of the filename
+        cdo daymean "$file" "$dest_dir/${filename%???????.*}".nc
 
     fi
 done
