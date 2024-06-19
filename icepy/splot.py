@@ -9,7 +9,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
-from matplotlib import colors
+from matplotlib import colors, colormaps
 from scipy.io import loadmat
 
 # Custom package
@@ -25,7 +25,7 @@ def set_extent(ax, domain = [-180,180,-90,-47.5], transform=ccrs.PlateCarree()):
 
 
 
-def add_sic(ax, data, anom=True, year=None, month=None, day=None, transform=ccrs.PlateCarree()):
+def add_sic(ax, data, anom=True, year=None, month=None, day=None, cmap=None, transform=ccrs.PlateCarree()):
     """
     Adds a sea ice concentration heatmap to the given axis.
     """
@@ -41,17 +41,21 @@ def add_sic(ax, data, anom=True, year=None, month=None, day=None, transform=ccrs
         sicname = 'SICN'
     else:
         sicname = 'sicn'
-    try:
-        data[sicname] = data[sicname][list(data[sicname].dims).index('time')] 
-    except:
-        data[sicname] = data[sicname][list(data[sicname].dims).index('month')]
     
     # colour map
-    if anom:
-        cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
-    else:
-        cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3_pos.mat')['cmap'], name='jet3')
+    if cmap == None:
+        if anom:
+            cmap = colormaps['seismic'](np.linspace(0,1,79))
+            cmap = np.insert(cmap, 39, np.array([1.,1.,1.,1.]),axis=0) # add another white in the middle
+            cmap = colors.ListedColormap(cmap)
+            # cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
+        else:
+            cmap = colormaps['OrRd'](np.linspace(0,1,40))
+            cmap[0] = np.array([1.,1.,1.,1.]) # zero is always white
+            cmap = colors.ListedColormap(cmap)
+            # cmap = colors.ListedColormap(loadmat('./cmaps/cmap_jet3_pos.mat')['cmap'], name='jet3')
     cmap.set_bad(color='lightgrey', alpha=1)  # Specify the color for NaN values
+    cmap.set_extremes(over='white')
 
     # plot
     sic_plot = data[sicname].plot(ax=ax,transform=transform,cmap=cmap,add_colorbar=False)
