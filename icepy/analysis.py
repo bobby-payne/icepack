@@ -13,6 +13,41 @@ import cftime
 
 
 
+def _apply_bounds(dataset, lat_bounds, lon_bounds, lat_label, lon_label, flip_zonal=False, flip_meridional=False):
+    """
+    Apply latitude and longitude bounds to a dataset, and return the dataset with all variables outside the bounds set to nans.
+
+    Args:
+        dataset:                    a dataset containing a variable as a function of coordinates latitude, longitude to which to apply the bounds.
+        lat_bounds (tuple):         the lower and upper bound of latitudes in which the variable will be considered. Outside of the bounds, the variable is set to nan.
+        lon_bounds (tuple):         similar to lat_bounds, except for longitude. Check whether your dataset inherently uses (0,360) or (-180,180).
+        lat_label (string):         label of the latitude coordinate in the dataset (not the grid file). Often 'lat' or 'latitude'. 
+        lon_label (string):         label of the longitude coordinate in the dataset (not the grid file). Often 'lon' or 'longitude'.
+        flip_meridional (bool):     if True, then sic INSIDE the LATITUDE bounds are set to nans, rather than outside. Defaults to False.
+        flip_zonal (bool):          if True, then sic INSIDE the LONGITUDE bounds are set to nans, rather than outside. Defaults to False.
+    """
+
+    if not lat_bounds == None:
+        lat_lo, lat_up = lat_bounds
+        if lat_lo > lat_up:
+            raise ArithmeticError("Lower latitude bound cannot be greater than upper latitude bound.")
+        if flip_meridional:
+            dataset = dataset.where((dataset[lat_label] <= lat_lo) | (dataset[lat_label] >= lat_up)) # OR
+        else:
+            dataset = dataset.where((dataset[lat_label] >= lat_lo) & (dataset[lat_label] <= lat_up)) # AND
+    if not lon_bounds == None:
+        lon_lo, lon_up = lon_bounds
+        if lon_lo > lon_up:
+            raise ArithmeticError("Lower longitude bound cannot be greater than upper longitude bound.")
+        if flip_zonal:
+            dataset = dataset.where((dataset[lon_label] <= lon_lo) | (dataset[lon_label] >= lon_up)) # OR
+        else:
+            dataset = dataset.where((dataset[lon_label] >= lon_lo) & (dataset[lon_label] <= lon_up)) # AND
+
+    return dataset
+
+
+
 def select_date(dataset,year=None,month=None,day=None,drop=True):
     """
     Selects the data of a particular xarray dataset for a particular year, month, and day.
@@ -87,7 +122,7 @@ def format_time_coord (dataset, date_start, date_end, freq, leap_years=True, tim
 
 def sic_to_sie (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
     """
-    Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice extent (in units of 10^6 km^2) 
+    Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice extent (in units of 10^6 km^2, unless specified by user w/ mfactor) 
     at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
 
     Args:
@@ -118,22 +153,7 @@ def sic_to_sie (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds
             grid_area = grid_area.rename({'lat':lat_label,'lon':lon_label})
 
     # apply latitude and longitude bounds
-    if not lat_bounds == None:
-        lat_lo, lat_up = lat_bounds
-        if lat_lo > lat_up:
-            raise ArithmeticError("Lower latitude bound cannot be greater than upper latitude bound.")
-        if flip_meridional:
-            SIC = SIC.where((SIC[lat_label] <= lat_lo) | (SIC[lat_label] >= lat_up)) # OR
-        else:
-            SIC = SIC.where((SIC[lat_label] >= lat_lo) & (SIC[lat_label] <= lat_up)) # AND
-    if not lon_bounds == None:
-        lon_lo, lon_up = lon_bounds
-        if lon_lo > lon_up:
-            raise ArithmeticError("Lower longitude bound cannot be greater than upper longitude bound.")
-        if flip_zonal:
-            SIC = SIC.where((SIC[lon_label] <= lon_lo) | (SIC[lon_label] >= lon_up)) # OR
-        else:
-            SIC = SIC.where((SIC[lon_label] >= lon_lo) & (SIC[lon_label] <= lon_up)) # AND
+    SIC = _apply_bounds(SIC, lat_bounds, lon_bounds, lat_label, lon_label, flip_zonal, flip_meridional)
 
     # calculate SIE
     SIC[sic_label] *= sic_factor
@@ -157,6 +177,63 @@ def sic_to_sie (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds
     # match time coordinate format with that of input and then return the dataset
     SIE['time'] = SIC['time']
     return SIE
+
+
+
+def sic_to_sia (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
+    """
+    Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice area (in units of 10^6 km^2, unless specified by user w/ mfactor) 
+    at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
+
+    Args:
+        sic_dataset:                an xarray or netcdf dataset containing a SIC variable as a function of coordinates latitude, longitude, and time.
+        grid_area_dataset:          an xarray or netcdf dataset containing grid cell area as a function of coordinates latitude and longitude.
+                                    Can be computed through the climate data operators command 'cdo gridarea'.
+                                    If no grid is provided (i.e., left as None), then SIE will be calculated with a less accurate method specific to 1x1 grids.
+        lat_bounds (tuple):         the lower and upper bound of latitudes in which SIC will be considered. Outside of the bounds, SIC is set to nan.
+        lon_bounds (tuple):         similar to lat_bounds, except for longitude. Check whether your dataset inherently uses (0,360) or (-180,180).
+        lat_label (string):         label of the latitude coordinate in the dataset (not the grid file). Often 'lat' or 'latitude'. 
+        lon_label (string):         label of the longitude coordinate in the dataset (not the grid file). Often 'lon' or 'longitude'.
+        sic_label (string):         label of the SIC data variable in the dataset. Often 'SICN' or 'siconc'.
+        flip_meridional (bool):     if True, then sic INSIDE the LATITUDE bounds are set to nans, rather than outside. Defaults to False.
+        flip_zonal (bool):          if True, then sic INSIDE the LONGITUDE bounds are set to nans, rather than outside. Defaults to False.
+        ensemble (None, str, int):  selects the given ensemble and drops the rest. if 'ave' or 'mean', then averages over ensembles instead.
+        ensemble_label (str):       label of the ensemble coordinate in the dataset. Often 'ensemble' or 'realization'.
+        sic_factor (float):         multiplies all sic values by this factor. useful for converting from percents. default 1.
+        mfactor (float):            multiplicative factor to multiple the final result by. Use 1e-12 if you want the outputted SIA to be in units of 10^6 sq km. If 1, then output is in units of sq m.
+
+    Returns:
+        (xarray dataset, optional)  the dataset of calculated SIA.
+    """
+
+    grid_area = grid_area_dataset
+    SIC = sic_dataset
+    if not type(grid_area_dataset) == type(None):
+        if grid_area.dims == {'lon':360, 'lat':180}:
+            grid_area = grid_area.rename({'lat':lat_label,'lon':lon_label})
+
+    # apply latitude and longitude bounds
+    SIC = _apply_bounds(SIC, lat_bounds, lon_bounds, lat_label, lon_label, flip_zonal, flip_meridional)
+
+    # calculate SIA
+    SIC[sic_label] *= sic_factor
+    if type(grid_area_dataset) == type(None):
+        SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
+    else:
+        SIC[sic_label] = SIC[sic_label] * grid_area.expand_dims(time=SIC['time'])['cell_area']
+    SIA = SIC.sum(dim=(lat_label,lon_label)).rename({sic_label: 'SIA'})
+    SIA *= mfactor
+
+    # average/select ensembles if specified
+    if ensemble == 'average' or ensemble == 'ave' or ensemble == 'mean':
+        SIA = SIA.mean(dim=ensemble_label)
+    elif not ensemble == None:
+        SIA = SIA.where(SIA[ensemble_label] == ensemble, drop=True)
+        SIA = SIA.squeeze(dim=ensemble_label)
+
+    # match time coordinate format with that of input and then return the dataset
+    SIA['time'] = SIC['time']
+    return SIA
 
 
 
