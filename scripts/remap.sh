@@ -4,7 +4,7 @@
 source_dir="./"
 
 # Destination directory for output files
-dest_dir="../sic/"
+dest_dir="../1x1/"
 
 # Loop through each file in the source directory
 for file in "$source_dir"/*; do
