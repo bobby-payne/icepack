@@ -12,6 +12,10 @@ datasets:
     psl:
       path: "/home/rrp000/sea_ice/data/obs/ERA5/mon/psl/1x1/psl_Amon_ERA5_CanESM5grid_197901-201912.nc"
 
+  OSI-SAF:
+    siconc:
+      path: "/home/rrp000/sea_ice/data/obs/OSI-SAF/sic/polstere/merged/ice_conc_sh_polstere-100_multi_200601-202212_monmean_1x1.nc"
+
   CanESM5.1_nw_1950:
     siconc:
       path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_195001-202112/sic/1x1/siconc_SImon_CanESM5-rsk2052-01_historical_r1i1p1f1_gn_195001-202112.nc"
