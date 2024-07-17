@@ -1,64 +1,150 @@
 
-datasets:
-
-  # wildcards are OK
-  # my convention: i for initialized, nw for wind nudged, nwt for wind and temperature nudged
+Datasets:
 
   Had2CIS:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/obs/Had2CIS/sic/1x1/td_hadisst2.2_cis_great_cmc_monthly_cdo360x180_195901_202412_sicn.nc"
+    path: "/home/rrp000/sea_ice/data/obs/Had2CIS/sic/1x1/td_hadisst2.2_cis_great_cmc_monthly_cdo360x180_195901_202412_sicn.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1959-01"
+      date_end: "2024-12"
+      leap_years: TRUE
+      freq: "M"
 
   ERA5:
-    psl:
-      path: "/home/rrp000/sea_ice/data/obs/ERA5/mon/psl/1x1/psl_Amon_ERA5_CanESM5grid_197901-201912.nc"
+    path: "/home/rrp000/sea_ice/data/obs/ERA5/mon/psl/1x1/psl_Amon_ERA5_CanESM5grid_197901-201912.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1979-01"
+      date_end: "2019-12"
+      leap_years: TRUE
+      freq: "M"
 
   OSI-SAF:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/obs/OSI-SAF/sic/polstere/merged/ice_conc_sh_polstere-100_multi_200601-202212_monmean_1x1.nc"
+    path: "/home/rrp000/sea_ice/data/obs/OSI-SAF/sic/polstere/merged/ice_conc_sh_polstere-100_multi_200601-202212_monmean_1x1.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "2006-01"
+      date_end: "2022-12"
+      leap_years: TRUE
+      freq: "M"
 
-  CanESM5.1_nw_1950:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_195001-202112/sic/1x1/siconc_SImon_CanESM5-rsk2052-01_historical_r1i1p1f1_gn_195001-202112.nc"
-    psl:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_195001-202112/psl/1x1/psl_Amon_CanESM5-rsk2052-01_historical_r1i1p1f1_gn_195001-202112.nc"
+  CanESM5.1_nw_1950_sic:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_195001-202112/sic/1x1/siconc_SImon_CanESM5-rsk2052-01_historical_r1i1p1f1_gn_195001-202112.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1950-01"
+      date_end: "2021-12"
+      leap_years: TRUE
+      freq: "M"
 
-  CanESM5.1_nw_1990:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_199001-202012/sic/1x1/siconc_SImon_CanESM5-rsk2052-05_historical_r1i1p1f1_gn_199001-202012.nc"
-    psl:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_199001-202012/psl/1x1/psl_Amon_CanESM5-rsk2052-05_historical_r1i1p1f1_gn_199001-202012.nc"
+  CanESM5.1_nw_1950_psl:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_195001-202112/psl/1x1/psl_Amon_CanESM5-rsk2052-01_historical_r1i1p1f1_gn_195001-202112.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1950-01"
+      date_end: "2021-12"
+      leap_years: TRUE
+      freq: "M"
 
-  CanESM5.1_nwt_1950:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds+temp_195001-202112/sic/1x1/siconc_SImon_CanESM5-rsk2050-01_historical_r1i1p1f1_gn_195001-202112.nc"
-    psl:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds+temp_195001-202112/psl/1x1/psl_Amon_CanESM5-rsk2050-01_historical_r1i1p1f1_gn_195001-202112.nc"
+  CanESM5.1_nw_1990_sic:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_199001-202012/sic/1x1/siconc_SImon_CanESM5-rsk2052-05_historical_r1i1p1f1_gn_199001-202012.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1990-01"
+      date_end: "2020-12"
+      leap_years: TRUE
+      freq: "M"
+  
+  CanESM5.1_nw_1990_psl:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds_199001-202012/psl/1x1/psl_Amon_CanESM5-rsk2052-05_historical_r1i1p1f1_gn_199001-202012.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1990-01"
+      date_end: "2020-12"
+      leap_years: TRUE
+      freq: "M"
+
+  CanESM5.1_nwt_1950_sic:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds+temp_195001-202112/sic/1x1/siconc_SImon_CanESM5-rsk2050-01_historical_r1i1p1f1_gn_195001-202112.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1950-01"
+      date_end: "2021-12"
+      leap_years: TRUE
+      freq: "M"
+
+  CanESM5.1_nwt_1950_psl:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge/winds+temp_195001-202112/psl/1x1/psl_Amon_CanESM5-rsk2050-01_historical_r1i1p1f1_gn_195001-202112.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1950-01"
+      date_end: "2021-12"
+      leap_years: TRUE
+      freq: "M"
 
   CanESM5.0_i:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v0/init/sic/1x1/siconc_SImon_CanESM5_chfp3b-hindcast_s1980123024-i1p2f1_gn_init1981*.nc"
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v0/init/sic/1x1/siconc_SImon_CanESM5_chfp3b-hindcast_s1980123024-i1p2f1_gn_init1981*.nc"
+    format_time: FALSE
 
   CanESM5.0_i_old:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v0/init/sic/1x1/old/reint/sf_chfp3b_1x1_1980_m*.nc" 
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v0/init/sic/1x1/old/reint/sf_chfp3b_1x1_1980_m*.nc" 
+    format_time: FALSE
       
   CanESM5.1_i:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/init/sic/1x1/*.nc"
-
-  CanESM5.1_inw:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds_201601-201612/sic/1x1/siconc_SImon_CanESM5-c3bnw2-201601e0*.nc"
-    psl:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds_201601-201612/psl/1x1/psl_Amon_CanESM5-c3bnw2-201601e0*.nc"
-
-  CanESM5.1_inwt:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds+temp_201601-201612/sic/1x1/siconc_SImon_CanESM5-c3bnwt2-201601e0*.nc"
-    psl:
-      path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds+temp_201601-201612/psl/1x1/psl_Amon_CanESM5-c3bnwt2-201601e0*.nc"
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/init/sic/1x1/*.nc"
+    format_time: FALSE
 
   GEM5.2-NEMO_i:
-    siconc:
-      path: "/home/rrp000/sea_ice/data/model/GEM5v2-NEMO/init/sic/1x1/sf_cgem5.2c_1990_m*.nc"
+    path: "/home/rrp000/sea_ice/data/model/GEM5v2-NEMO/init/sic/1x1/sf_cgem5.2c_1990_m*.nc"
+    format_time: FALSE
+
+  CanESM5.1_inw_sic:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds_201601-201612/sic/1x1/siconc_SImon_CanESM5-c3bnw2-201601e0*.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "2016-01"
+      date_end: "2016-12"
+      leap_years: TRUE
+      freq: "M"
+
+  CanESM5.1_inw_psl:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds_201601-201612/psl/1x1/psl_Amon_CanESM5-c3bnw2-201601e0*.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "2016-01"
+      date_end: "2016-12"
+      leap_years: TRUE
+      freq: "M"
+
+  CanESM5.1_inwt_sic:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds+temp_201601-201612/sic/1x1/siconc_SImon_CanESM5-c3bnwt2-201601e0*.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "2016-01"
+      date_end: "2016-12"
+      leap_years: TRUE
+      freq: "M"
+
+  CanESM5.1_inwt_psl:
+    path: "/home/rrp000/sea_ice/data/model/CanESM5/v1/nudge+init/mon/winds+temp_201601-201612/psl/1x1/psl_Amon_CanESM5-c3bnwt2-201601e0*.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "2016-01"
+      date_end: "2016-12"
+      leap_years: TRUE
+      freq: "M"
+
   
