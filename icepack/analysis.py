@@ -157,6 +157,7 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
 
     # calculate SIE
     SIC[sic_label] *= sic_factor
+    SIC = SIC.where((SIC[sic_label] <= 1.)&(SIC[sic_label] >= 0.),drop=True)
     if type(grid_area_dataset) == type(None):
         SIE = SIC.where(SIC[sic_label] >= 0.15,drop=True)
         SIE *= (111120**2)*np.abs(np.cos(SIE[lat_label]*np.pi/180))
@@ -217,6 +218,7 @@ def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bound
 
     # calculate SIA
     SIC[sic_label] *= sic_factor
+    SIC = SIC.where((SIC[sic_label] <= 1.)&(SIC[sic_label] >= 0.),drop=True)
     if type(grid_area_dataset) == type(None):
         SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
     else:
