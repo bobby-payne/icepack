@@ -109,3 +109,26 @@ def add_psl(ax, data, year=None, month=None, day=None, clevels=np.arange(950, 12
     psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels= clevels,linewidths=clw)
     plt.clabel(psl_plot, inline=True, fontsize=4, colors='black', use_clabeltext=True)
     return psl_plot
+
+
+
+def plot_skillmatrix(ax, skill_matrix, sig_matrix, cmap='jet3'):
+    """
+    Plots a skill and significance matrix on a given axis.
+    """
+
+    if cmap =='jet3' or cmap == None:
+        cm = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
+    skill_plot = ax.imshow(skill_matrix,cmap=cm)
+    for lead in range(12):
+        for tm in np.arange(1,13):
+            if sig_matrix[lead][tm-1] == True:
+                ax.plot(tm-1,lead,'.',color='black')
+    ax.invert_yaxis()
+    ax.set_yticks(np.arange(12))
+    ax.set_xticks(np.arange(12))
+    ax.set_xticklabels(['J','F','M','A','M','J','J','A','S','O','N','D'])
+    ax.set_ylabel('Lead Time (months)')
+    ax.set_title("Skill")
+
+    return skill_plot
