@@ -11,6 +11,16 @@ Datasets:
       leap_years: TRUE
       freq: "M"
 
+  NSIDC:
+    path: "/home/rrp000/sea_ice/data/obs/NSIDC/sic/1x1/seaice_conc_mon_sh_cdr_seaice_conc_199101_202112_nrt_202201_filled_f_1x1.nc"
+    format_time: TRUE
+    time:
+      label: "time"
+      date_begin: "1991-01"
+      date_end: "2021-12"
+      leap_years: TRUE
+      freq: "M"
+
   ERA5:
     path: "/home/rrp000/sea_ice/data/obs/ERA5/mon/psl/1x1/psl_Amon_ERA5_CanESM5grid_197901-201912.nc"
     format_time: TRUE
