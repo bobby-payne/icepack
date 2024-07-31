@@ -294,24 +294,6 @@ def get_anomalies (dataset, var, ref_period=None, ref_dataset=None):
 
 
 
-def get_trend (dataset):
-    """
-    Function that computes a least-squares linear fit for the given data variable, assuming the data are equidistant in time.
-    Currently this function is only compatible with a 1-dimensional time series. (i.e., the only coordinate is time.)
-
-    Args:
-        dataset (xarray dataset): the dataset containing a time coordinate and the variable to be detrended.
-
-    Returns:
-        (1D list): the slope and the intercept of the fit.
-    """
-
-    N = len(dataset['time'])
-    slope, intercept = np.polyfit(np.arange(0,N,1), dataset, deg=1)
-    return [slope,intercept]
-
-
-
 def remove_mean (dataset, var, ref_period=(0,9999)):
     """
     Function that removes the mean, producing anomalies, for each month separately. (I.e. the November trend is calculated only using November data points.)
@@ -348,6 +330,24 @@ def remove_mean (dataset, var, ref_period=(0,9999)):
 
 
 
+def get_trend (dataset):
+    """
+    Function that computes a least-squares linear fit for the given data variable, assuming the data are equidistant in time.
+    Currently this function is only compatible with a 1-dimensional time series. (i.e., the only coordinate is time.)
+
+    Args:
+        dataset (xarray dataset): the dataset containing a time coordinate and the variable to be detrended.
+
+    Returns:
+        (1D list): the slope and the intercept of the fit.
+    """
+
+    N = len(dataset['time'])
+    slope, intercept = np.polyfit(np.arange(0,N,1), dataset, deg=1)
+    return [slope,intercept]
+
+
+
 def remove_trend (dataset, var, ref_period=(0,9999)):
     """
     Function that removes linear trends, for each month separately. (I.e. the November trend is calculated only using November data points.)
@@ -364,23 +364,26 @@ def remove_trend (dataset, var, ref_period=(0,9999)):
         (dataset, same dims as input): dataset with the trend removed.
     """
 
-    dataset = dataset.copy(deep=True) # deep must be set to True
+    # so that the input stays intact
+    dataset = dataset.copy(deep=True)
 
     for m in np.arange(1,13,1): # loop over each month
 
-        # get subset of data for month 'm'
-        month_indices = (dataset['time.month'] == m)
-        subset_month = dataset.where(month_indices,drop=True)
-        subset_detrended = subset_month.copy(deep=True) # the dataset to be (but not yet) detrended then returned. 'deep' must be true.
+        # the data for this specific month only
+        dataset_formonth = dataset.where(dataset['time.month']==m,drop=True)
 
-        # another subset, this time narrowed down to the years over which the trend is to be computed.
-        year_indices = (subset_month['time.year'] >= ref_period[0]) & (subset_month['time.year'] <= ref_period[1])
-        subset_monthandyear = subset_month.where(year_indices, drop=True)
+        # apply year bounds; this is the subset that will be used for computing the trend
+        dataset_subset = dataset_formonth.where((dataset_formonth['time.year'] >= ref_period[0]) & (dataset_formonth['time.year'] <= ref_period[1]),drop=True)
 
-        # Remove linear trend
-        slope, intercept = get_trend(subset_monthandyear[var])
-        subset_detrended[var] = subset_month[var] - (intercept + slope * np.arange(len(subset_month)))
-        dataset[var].loc[month_indices] = subset_detrended[var]
+        # calculate the slope and intercept of the trend based on this subset of data
+        slope,intercept = get_trend(dataset_subset[var])
+
+        # subtract this trend from the data for the relevant month (but across all years)
+        N = len(dataset_formonth[var])
+        dataset_formonth[var] -= slope * np.arange(N) + intercept
+
+        # apply to the original dataset
+        dataset.loc[dict(time=dataset_formonth['time'])] = dataset_formonth
 
     return dataset
 
