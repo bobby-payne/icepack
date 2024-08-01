@@ -121,7 +121,7 @@ def plot_skillmatrix(ax, skill_matrix, sig_matrix, cmap='jet3'):
         cm = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
     skill_plot = ax.imshow(skill_matrix,cmap=cm)
     for lead in range(12):
-        for tm in np.arange(1,13):
+        for tm in np.asrange(1,13):
             if sig_matrix[lead][tm-1] == True:
                 ax.plot(tm-1,lead,'.',color='black')
     ax.invert_yaxis()
