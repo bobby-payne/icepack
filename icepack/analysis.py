@@ -120,7 +120,7 @@ def format_time_coord (dataset, date_start, date_end, freq, leap_years=True, tim
 
 
 
-def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
+def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', time_label='time', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
     """
     Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice extent (in units of 10^6 km^2, unless specified by user w/ mfactor) 
     at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
@@ -135,6 +135,7 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
         lat_label (string):         label of the latitude coordinate in the dataset (not the grid file). Often 'lat' or 'latitude'. 
         lon_label (string):         label of the longitude coordinate in the dataset (not the grid file). Often 'lon' or 'longitude'.
         sic_label (string):         label of the SIC data variable in the dataset. Often 'SICN' or 'siconc'.
+        time_label (string):        label of the time coordinate. Often 'time'.
         flip_meridional (bool):     if True, then sic INSIDE the LATITUDE bounds are set to nans, rather than outside. Defaults to False.
         flip_zonal (bool):          if True, then sic INSIDE the LONGITUDE bounds are set to nans, rather than outside. Defaults to False.
         ensemble (None, str, int):  selects the given ensemble and drops the rest. if 'ave' or 'mean', then averages over ensembles instead.
@@ -164,7 +165,7 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
         SIE = SIE.sum(dim=(lat_label,lon_label))
         SIE = SIE.rename({sic_label: 'SIE'})
     else:
-        SIE = grid_area.expand_dims(time=SIC['time']).where((SIC[sic_label] >= 0.15) & (SIC[sic_label] <= 1.0)).sum(dim=(lat_label,lon_label))
+        SIE = grid_area.expand_dims(time=SIC[time_label]).where((SIC[sic_label] >= 0.15) & (SIC[sic_label] <= 1.0)).sum(dim=(lat_label,lon_label))
         SIE = SIE.rename({'cell_area': 'SIE'})
     SIE *= mfactor
 
@@ -176,12 +177,12 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
         SIE = SIE.squeeze(dim=ensemble_label)
 
     # match time coordinate format with that of input and then return the dataset
-    SIE['time'] = SIC['time']
+    SIE[time_label] = SIC[time_label]
     return SIE
 
 
 
-def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
+def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', time_label='time', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
     """
     Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice area (in units of 10^6 km^2, unless specified by user w/ mfactor) 
     at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
@@ -196,6 +197,7 @@ def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bound
         lat_label (string):         label of the latitude coordinate in the dataset (not the grid file). Often 'lat' or 'latitude'. 
         lon_label (string):         label of the longitude coordinate in the dataset (not the grid file). Often 'lon' or 'longitude'.
         sic_label (string):         label of the SIC data variable in the dataset. Often 'SICN' or 'siconc'.
+        time_label (string):        label of the time coordinate. Often 'time'.
         flip_meridional (bool):     if True, then sic INSIDE the LATITUDE bounds are set to nans, rather than outside. Defaults to False.
         flip_zonal (bool):          if True, then sic INSIDE the LONGITUDE bounds are set to nans, rather than outside. Defaults to False.
         ensemble (None, str, int):  selects the given ensemble and drops the rest. if 'ave' or 'mean', then averages over ensembles instead.
@@ -222,7 +224,7 @@ def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bound
     if type(grid_area_dataset) == type(None):
         SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
     else:
-        SIC[sic_label] = SIC[sic_label] * grid_area.expand_dims(time=SIC['time'])['cell_area']
+        SIC[sic_label] = SIC[sic_label] * grid_area.expand_dims(time=SIC[time_label])['cell_area']
     SIA = SIC.sum(dim=(lat_label,lon_label)).rename({sic_label: 'SIA'})
     SIA *= mfactor
 
@@ -234,7 +236,7 @@ def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bound
         SIA = SIA.squeeze(dim=ensemble_label)
 
     # match time coordinate format with that of input and then return the dataset
-    SIA['time'] = SIC['time']
+    SIA[time_label] = SIC[time_label]
     return SIA
 
 
