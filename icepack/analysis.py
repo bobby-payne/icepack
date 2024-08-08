@@ -158,15 +158,13 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
 
     # calculate SIE
     SIC[sic_label] *= sic_factor
-    SIC = SIC.where((SIC[sic_label] <= 1.)&(SIC[sic_label] >= 0.),drop=True)
+    SIC[sic_label] = SIC[sic_label].where((SIC[sic_label] <= 1.)&(SIC[sic_label] >= 0.),other=np.nan)
+    SIC[sic_label] = xr.where((SIC[sic_label] >= .15),1.,0.) # extra step only for SIE (not for SIA)
     if type(grid_area_dataset) == type(None):
-        SIE = SIC.where(SIC[sic_label] >= 0.15,drop=True)
-        SIE *= (111120**2)*np.abs(np.cos(SIE[lat_label]*np.pi/180))
-        SIE = SIE.sum(dim=(lat_label,lon_label))
-        SIE = SIE.rename({sic_label: 'SIE'})
+        SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
     else:
-        SIE = grid_area.expand_dims(time=SIC[time_label]).where((SIC[sic_label] >= 0.15) & (SIC[sic_label] <= 1.0)).sum(dim=(lat_label,lon_label))
-        SIE = SIE.rename({'cell_area': 'SIE'})
+        SIC[sic_label] = SIC[sic_label] * grid_area.expand_dims(time=SIC[time_label])['cell_area']
+    SIE = SIC.sum(dim=(lat_label,lon_label)).rename({sic_label: 'SIE'})
     SIE *= mfactor
 
     # average/select ensembles if specified
