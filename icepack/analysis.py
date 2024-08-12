@@ -48,6 +48,27 @@ def _apply_bounds(dataset, lat_bounds, lon_bounds, lat_label, lon_label, flip_zo
 
 
 
+def apply_mask(dataset, variable, mask, mask_id=np.nan):
+    """
+    Apply a mask to a dataset, and return the dataset with all masked variables set to nans.
+    If this function returns an empty dataset, it may be because the mask and dataset latitudes and longitudes do not match exactly.
+
+    Args:
+        dataset:                    a dataset containing a variable to mask. Coordinates must include lat and lon.
+        variable:                   name of the variable to which to apply the mask
+        mask:                       the mask dataset to apply, having value = mask_id to indicate which cells should be masked.
+        mask_id:                    the value in 'mask' indicating that the cell is to be masked.
+    """
+
+    dataset,mask = xr.align(dataset,mask,join="inner")
+    if np.isnan(mask_id):
+        dataset[variable] = dataset[variable].where((np.isnan(mask['mask'])!=True),other=np.nan)
+    else:
+        dataset[variable] = dataset[variable].where((mask['mask']!=mask_id),other=np.nan)
+    return dataset
+
+
+
 def select_date(dataset,year=None,month=None,day=None,drop=True):
     """
     Selects the data of a particular xarray dataset for a particular year, month, and day.
@@ -120,16 +141,15 @@ def format_time_coord (dataset, date_start, date_end, freq, leap_years=True, tim
 
 
 
-def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', time_label='time', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
+def get_iceextent (sic_dataset, mask=None, mask_id=np.nan, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', time_label='time', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
     """
     Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice extent (in units of 10^6 km^2, unless specified by user w/ mfactor) 
     at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
 
     Args:
         sic_dataset:                an xarray or netcdf dataset containing a SIC variable as a function of coordinates latitude, longitude, and time.
-        grid_area_dataset:          an xarray or netcdf dataset containing grid cell area as a function of coordinates latitude and longitude.
-                                    Can be computed through the climate data operators command 'cdo gridarea'.
-                                    If no grid is provided (i.e., left as None), then SIE will be calculated with a less accurate method specific to 1x1 grids.
+        mask:                       a mask to apply to the dataset. See documentation for 'apply_mask' function. Applied before lat_bounds and lon_bounds.
+        mask_id:                    the value in 'mask' denoting where to mask. Default np.nan. See documentation for 'apply_mask' function.
         lat_bounds (tuple):         the lower and upper bound of latitudes in which SIC will be considered. Outside of the bounds, SIC is set to nan.
         lon_bounds (tuple):         similar to lat_bounds, except for longitude. Check whether your dataset inherently uses (0,360) or (-180,180).
         lat_label (string):         label of the latitude coordinate in the dataset (not the grid file). Often 'lat' or 'latitude'. 
@@ -147,23 +167,18 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
         (xarray dataset, optional)  the dataset of calculated SIE.
     """
 
-    grid_area = grid_area_dataset
     SIC = sic_dataset
-    if not type(grid_area_dataset) == type(None):
-        if grid_area.dims == {'lon':360, 'lat':180}:
-            grid_area = grid_area.rename({'lat':lat_label,'lon':lon_label})
 
-    # apply latitude and longitude bounds
+    # apply mask if supplied, and latitude and longitude bounds
+    if type(mask)!=type(None):
+        SIC = apply_mask(SIC, sic_label, mask, mask_id=mask_id)
     SIC = _apply_bounds(SIC, lat_bounds, lon_bounds, lat_label, lon_label, flip_zonal, flip_meridional)
 
     # calculate SIE
     SIC[sic_label] *= sic_factor
     SIC[sic_label] = SIC[sic_label].where((SIC[sic_label] <= 1.)&(SIC[sic_label] >= 0.),other=np.nan)
     SIC[sic_label] = xr.where((SIC[sic_label] >= .15),1.,0.) # extra step only for SIE (not for SIA)
-    if type(grid_area_dataset) == type(None):
-        SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
-    else:
-        SIC[sic_label] = SIC[sic_label] * grid_area.expand_dims(time=SIC[time_label])['cell_area']
+    SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
     SIE = SIC.sum(dim=(lat_label,lon_label)).rename({sic_label: 'SIE'})
     SIE *= mfactor
 
@@ -180,16 +195,15 @@ def get_iceextent (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bou
 
 
 
-def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', time_label='time', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
+def get_icearea (sic_dataset, mask=None, mask_id=np.nan, lat_bounds=None, lon_bounds=None, lat_label='lat', lon_label='lon', sic_label='SICN', time_label='time', flip_meridional=False, flip_zonal=False, ensemble=None, ensemble_label='ensemble', sic_factor=1, mfactor=1e-12):
     """
     Function that takes in a netcdf dataframe of gridded sea ice concentration (SIC) and outputs the corresponding sea ice area (in units of 10^6 km^2, unless specified by user w/ mfactor) 
     at each time step, conventionally defined as the integrated area of all grid cells having SIC > 0.15
 
     Args:
         sic_dataset:                an xarray or netcdf dataset containing a SIC variable as a function of coordinates latitude, longitude, and time.
-        grid_area_dataset:          an xarray or netcdf dataset containing grid cell area as a function of coordinates latitude and longitude.
-                                    Can be computed through the climate data operators command 'cdo gridarea'.
-                                    If no grid is provided (i.e., left as None), then SIE will be calculated with a less accurate method specific to 1x1 grids.
+        mask:                       a mask to apply to the dataset. See documentation for 'apply_mask' function. Applied before lat_bounds and lon_bounds.
+        mask_id:                    the value in 'mask' denoting where to mask. Default np.nan. See documentation for 'apply_mask' function.
         lat_bounds (tuple):         the lower and upper bound of latitudes in which SIC will be considered. Outside of the bounds, SIC is set to nan.
         lon_bounds (tuple):         similar to lat_bounds, except for longitude. Check whether your dataset inherently uses (0,360) or (-180,180).
         lat_label (string):         label of the latitude coordinate in the dataset (not the grid file). Often 'lat' or 'latitude'. 
@@ -207,22 +221,17 @@ def get_icearea (sic_dataset, grid_area_dataset=None, lat_bounds=None, lon_bound
         (xarray dataset, optional)  the dataset of calculated SIA.
     """
 
-    grid_area = grid_area_dataset
     SIC = sic_dataset
-    if not type(grid_area_dataset) == type(None):
-        if grid_area.dims == {'lon':360, 'lat':180}:
-            grid_area = grid_area.rename({'lat':lat_label,'lon':lon_label})
 
     # apply latitude and longitude bounds
+    if type(mask)!=type(None):
+        SIC = apply_mask(SIC, sic_label, mask, mask_id=mask_id)
     SIC = _apply_bounds(SIC, lat_bounds, lon_bounds, lat_label, lon_label, flip_zonal, flip_meridional)
 
     # calculate SIA
     SIC[sic_label] *= sic_factor
     SIC = SIC.where((SIC[sic_label] <= 1.)&(SIC[sic_label] >= 0.),drop=True)
-    if type(grid_area_dataset) == type(None):
-        SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
-    else:
-        SIC[sic_label] = SIC[sic_label] * grid_area.expand_dims(time=SIC[time_label])['cell_area']
+    SIC[sic_label] = SIC[sic_label] * (111120**2)*np.abs(np.cos(SIC[lat_label]*np.pi/180))
     SIA = SIC.sum(dim=(lat_label,lon_label)).rename({sic_label: 'SIA'})
     SIA *= mfactor
 
