@@ -60,9 +60,10 @@ def get_skillmatrix (data_obs, data_initialized, daterange=None, significance_te
             if not type(daterange) == type(None):
                 data_init_subset = data_init_subset.where((data_init_subset['time.year']>=y0)&(data_init_subset['time.year']<=y1),drop=True)
                 data_obs_subset = data_obs_subset.where((data_obs_subset['time.year']>=y0)&(data_obs_subset['time.year']<=y1),drop=True)
-
+                data_init_subset['time'] = data_obs_subset['time']
+            else:
             # align along the time axis
-            data_init_subset, data_obs_subset = xr.align(data_init_subset, data_obs_subset)
+                data_init_subset, data_obs_subset = xr.align(data_init_subset, data_obs_subset)
         
             # compute skill
             skill = xr.corr(data_obs_subset['SIE'], data_init_subset['SIE'], dim='time').values.item()
