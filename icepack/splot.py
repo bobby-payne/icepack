@@ -102,28 +102,24 @@ def add_psl(ax, data, year=None, month=None, day=None, clevels=np.arange(950, 12
         data['psl'] = data['psl'][list(data.dims).index('month')]
 
     # plot
-    try:
-        data = data.assign_coords(lon=(((data.lon + 180) % 360) - 180)).sortby('lon')
-    except:
-        data = data.assign_coords(longitude=(((data.longitude + 180) % 360) - 180)).sortby('longitude')
-    psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels= clevels,linewidths=clw)
+    psl_plot = data['psl'].plot.contour(ax=ax,transform=transform,colors=ccol,levels=clevels,linewidths=clw)
     plt.clabel(psl_plot, inline=True, fontsize=4, colors='black', use_clabeltext=True)
     return psl_plot
 
 
 
-def plot_skillmatrix(ax, skill_matrix, sig_matrix, cmap='jet3'):
+def plot_skillmatrix(ax, skill_matrix, sig_matrix=None, cmap_path='./cmaps/cmap_jet3.mat'):
     """
     Plots a skill and significance matrix on a given axis.
     """
 
-    if cmap =='jet3' or cmap == None:
-        cm = colors.ListedColormap(loadmat('./cmaps/cmap_jet3.mat')['cmap'], name='jet3')
+    cm = colors.ListedColormap(loadmat(cmap_path)['cmap'], name='jet3')
     skill_plot = ax.imshow(skill_matrix,cmap=cm)
-    for lead in range(12):
-        for tm in np.asrange(1,13):
-            if sig_matrix[lead][tm-1] == True:
-                ax.plot(tm-1,lead,'.',color='black')
+    if not type(sig_matrix) == type(None):
+        for lead in range(12):
+            for tm in np.arange(1,13):
+                if sig_matrix[lead][tm-1] == True:
+                    ax.plot(tm-1,lead,'.',color='black')
     ax.invert_yaxis()
     ax.set_yticks(np.arange(12))
     ax.set_xticks(np.arange(12))
