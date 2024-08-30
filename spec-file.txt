@@ -341,6 +341,7 @@ https://conda.anaconda.org/conda-forge/noarch/jupyter_events-0.10.0-pyhd8ed1ab_0
 https://conda.anaconda.org/conda-forge/linux-64/libarrow-16.1.0-h9102155_9_cpu.conda
 https://conda.anaconda.org/conda-forge/linux-64/magics-4.15.4-h24e9adf_1.conda
 https://conda.anaconda.org/conda-forge/noarch/nbclient-0.10.0-pyhd8ed1ab_0.conda
+https://conda.anaconda.org/conda-forge/noarch/nc-time-axis-1.4.1-pyhd8ed1ab_0.tar.bz2
 https://conda.anaconda.org/conda-forge/linux-64/nco-5.2.4-he646072_0.conda
 https://conda.anaconda.org/conda-forge/linux-64/qt-main-5.15.8-hc9dc06e_21.conda
 https://conda.anaconda.org/conda-forge/noarch/seaborn-base-0.13.2-pyhd8ed1ab_2.conda
